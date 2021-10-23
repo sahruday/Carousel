@@ -48,9 +48,9 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.sahu.carousel.Carousel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
-
 
 /**
  * Create and [remember] the [CarouselScrollState] based on the currently appropriate scroll
@@ -154,7 +154,7 @@ class CarouselScrollState(initial: Int) : ScrollableState {
 
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend ScrollScope.() -> Unit
+        block: suspend ScrollScope.() -> Unit,
     ): Unit = scrollableState.scroll(scrollPriority, block)
 
     override fun dispatchRawDelta(delta: Float): Float =
@@ -172,7 +172,7 @@ class CarouselScrollState(initial: Int) : ScrollableState {
      */
     suspend fun animateScrollTo(
         value: Int,
-        animationSpec: AnimationSpec<Float> = SpringSpec()
+        animationSpec: AnimationSpec<Float> = SpringSpec(),
     ) {
         this.animateScrollBy((value - this.value).toFloat(), animationSpec)
     }
@@ -221,7 +221,7 @@ fun Modifier.verticalScroll(
     state: CarouselScrollState,
     enabled: Boolean = true,
     flingBehavior: FlingBehavior? = null,
-    reverseScrolling: Boolean = false
+    reverseScrolling: Boolean = false,
 ) = scroll(
     state = state,
     isScrollable = enabled,
@@ -248,7 +248,7 @@ fun Modifier.horizontalScroll(
     state: CarouselScrollState,
     enabled: Boolean = true,
     flingBehavior: FlingBehavior? = null,
-    reverseScrolling: Boolean = false
+    reverseScrolling: Boolean = false,
 ) = scroll(
     state = state,
     isScrollable = enabled,
@@ -262,7 +262,7 @@ private fun Modifier.scroll(
     reverseScrolling: Boolean,
     flingBehavior: FlingBehavior?,
     isScrollable: Boolean,
-    isVertical: Boolean
+    isVertical: Boolean,
 ) = composed(
     factory = {
         val coroutineScope = rememberCoroutineScope()
@@ -325,11 +325,11 @@ private fun Modifier.scroll(
 private data class ScrollingLayoutModifier(
     val scrollerState: CarouselScrollState,
     val isReversed: Boolean,
-    val isVertical: Boolean
+    val isVertical: Boolean,
 ) : LayoutModifier {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         constraints.assertNotNestingScrollableContainers(isVertical)
         val childConstraints = constraints.copy(
@@ -342,7 +342,7 @@ private data class ScrollingLayoutModifier(
         val scrollHeight = placeable.height - height
         val scrollWidth = placeable.width - width
         val side = if (isVertical) scrollHeight else scrollWidth
-        val length = if(isVertical) placeable.height else placeable.width
+        val length = if (isVertical) placeable.height else placeable.width
         return layout(width, height) {
             scrollerState.maxValue = side
             scrollerState.scrollableLength = length
@@ -356,22 +356,22 @@ private data class ScrollingLayoutModifier(
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ) = measurable.minIntrinsicWidth(height)
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ) = measurable.minIntrinsicHeight(width)
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ) = measurable.maxIntrinsicWidth(height)
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ) = measurable.maxIntrinsicHeight(width)
 }
 
@@ -420,7 +420,7 @@ private val HorizontalScrollableClipModifier = Modifier.clip(object : Shape {
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
-        density: Density
+        density: Density,
     ): Outline {
         val inflateSize = with(density) { MaxSupportedElevation.roundToPx().toFloat() }
         return Outline.Rectangle(
@@ -438,7 +438,7 @@ private val VerticalScrollableClipModifier = Modifier.clip(object : Shape {
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
-        density: Density
+        density: Density,
     ): Outline {
         val inflateSize = with(density) { MaxSupportedElevation.roundToPx().toFloat() }
         return Outline.Rectangle(

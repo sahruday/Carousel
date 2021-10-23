@@ -159,7 +159,7 @@ fun VerticalScrollStateExample(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(400.dp)
+            .height(300.dp)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -178,7 +178,7 @@ fun VerticalScrollStateExample(
             ) {
                 repeat(20) {
                     Box(
-                        modifier = Modifier.size(100.dp),
+                        modifier = Modifier.size(100.dp, 50.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(text = "Item $it")
@@ -214,7 +214,7 @@ fun VerticalLazyStateExample(
         verticalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxWidth()
-            .height(400.dp)
+            .height(300.dp)
             .padding(16.dp)
     ) {
         Text(text = "Using Lazy List State", style = MaterialTheme.typography.h5)
@@ -231,7 +231,7 @@ fun VerticalLazyStateExample(
                 repeat(20) {
                     item {
                         Box(
-                            modifier = Modifier.size(100.dp),
+                            modifier = Modifier.size(100.dp, 50.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(text = "Item $it")

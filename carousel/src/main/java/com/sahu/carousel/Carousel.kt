@@ -1,6 +1,7 @@
 package com.sahu.carousel
 
 import androidx.annotation.FloatRange
+import androidx.annotation.Px
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.size
@@ -19,7 +20,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection.Ltr
 import androidx.compose.ui.unit.dp
 import com.sahu.foundation.CarouselScrollState
@@ -53,9 +53,6 @@ import com.sahu.foundation.verticalScroll
  * @author Sahruday (SAHU)
  *
  * **int a, b = 84, 73**
- *
- * @sample VerticalScrollStatePreview
- * @sample HorizontalScrollStatePreview
  */
 @Composable
 fun Carousel(
@@ -65,7 +62,7 @@ fun Carousel(
     minPercentage: Float = DefaultCarouselMinPercentage,
     @FloatRange(from = 0.toDouble(), to = 1.toDouble(), fromInclusive = false, toInclusive = false)
     maxPercentage: Float = DefaultCarouselMaxPercentage,
-    colors: CarouselColors = CarouselDefaults.colors()
+    colors: CarouselColors = CarouselDefaults.colors(),
 ) = CarouselImpl(
     scrolled = state.value,
     maxScroll = state.maxValue,
@@ -84,7 +81,7 @@ fun Carousel(
  * This can be added by using [LazyRow], [LazyColumn] and [LazyVerticalGrid]
  * which accepts [LazyListState] as a state maintainer.
  *
- * **NOTE: This works smoothly when all items has same length along scroll axis.**
+ * **NOTE: Use this when all items has same length along main axis.**
  *
  * @param state is the state of the scroll using [LazyListState]
  * @param modifier [Modifier] to be applied to the View. If size (width or height) is not
@@ -102,9 +99,6 @@ fun Carousel(
  * @author Sahruday (SAHU)
  *
  * **int a, b = 84, 73**
- *
- * @sample VerticalLazyStatePreview
- * @sample HorizontalLazyStatePreview
  */
 @Composable
 fun Carousel(
@@ -114,21 +108,69 @@ fun Carousel(
     minPercentage: Float = DefaultCarouselMinPercentage,
     @FloatRange(from = 0.toDouble(), to = 1.toDouble(), fromInclusive = false, toInclusive = false)
     maxPercentage: Float = DefaultCarouselMaxPercentage,
-    colors: CarouselColors = CarouselDefaults.colors()
+    colors: CarouselColors = CarouselDefaults.colors(),
 ) {
-    val itemLengthInPx = state.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: Constraints.Infinity
+    val itemLengthInPx = state.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
     val length = itemLengthInPx * state.layoutInfo.totalItemsCount
-    CarouselImpl(
-        scrolled = state.firstVisibleItemIndex.times(itemLengthInPx) + state.firstVisibleItemScrollOffset,
-        maxScroll = (length - state.layoutInfo.viewportEndOffset),
-        length = length,
+    Carousel(
+        state = state,
+        totalLength = length,
         modifier = modifier,
-        isScrollInProgress = state.isScrollInProgress,
         minPercentage = minPercentage,
         maxPercentage = maxPercentage,
-        colors = colors
-    )
+        colors = colors,
+    ) {
+        state.firstVisibleItemIndex.times(itemLengthInPx) + state.firstVisibleItemScrollOffset
+    }
 }
+
+/**
+ * Carousel View.
+ *
+ * Carousel is a scroll indicator for [ScrollableState] views.
+ * This can be added by using [LazyRow], [LazyColumn] and [LazyVerticalGrid]
+ * which accepts [LazyListState] as a state maintainer.
+ *
+ * **NOTE: Use this when items are of different sizes and were known to calculate scroll length**
+ *
+ * @param state is the state of the scroll using [LazyListState]
+ * @param totalLength is the total length of all item combined in [Px] along the main axis.
+ * @param modifier [Modifier] to be applied to the View. If size (width or height) is not
+ * set, then it takes the default values [DefaultCarouselWidth] and [DefaultCarouselHeight]
+ * for width and height respectively.
+ * @param minPercentage is the min percentage in float in between 0f and 1f that the thumb can
+ * be. percentage is with respective to the width of the bar.
+ * @param maxPercentage is the max percentage in float in between 0f and 1f that the thumb can
+ * be. percentage is with respective to the width of the bar.
+ * @param colors [CarouselColors] that accepts color and brush for thumb and bg to draw
+ * based on the [LazyListState.isScrollInProgress]
+ * @param scrolled is a lambda to calculate the amount that scrolled along main axis in [Px]
+ *
+ * @see rememberLazyListState
+ *
+ * @author Sahruday (SAHU)
+ *
+ * **int a, b = 84, 73**
+ */
+@Composable
+fun Carousel(
+    state: LazyListState,
+    totalLength: Int,
+    modifier: Modifier = Modifier,
+    @FloatRange(from = 0.toDouble(), to = 1.toDouble(), fromInclusive = false, toInclusive = false)
+    minPercentage: Float = DefaultCarouselMinPercentage,
+    @FloatRange(from = 0.toDouble(), to = 1.toDouble(), fromInclusive = false, toInclusive = false)
+    maxPercentage: Float = DefaultCarouselMaxPercentage,
+    colors: CarouselColors = CarouselDefaults.colors(),
+    scrolled: () -> Int,
+) = CarouselImpl(scrolled = scrolled.invoke(),
+    maxScroll = totalLength - state.layoutInfo.viewportEndOffset,
+    length = totalLength,
+    modifier = modifier,
+    isScrollInProgress = state.isScrollInProgress,
+    minPercentage = minPercentage,
+    maxPercentage = maxPercentage,
+    colors = colors)
 
 @Composable
 private fun CarouselImpl(
@@ -139,12 +181,12 @@ private fun CarouselImpl(
     isScrollInProgress: Boolean,
     minPercentage: Float,
     maxPercentage: Float,
-    colors: CarouselColors
+    colors: CarouselColors,
 ) {
     require(0f < minPercentage) { "min should be > 0f." }
     require(minPercentage <= maxPercentage) { "min should be < max." }
     require(maxPercentage < 1f) { "max should be less than 1f." }
-    if (maxScroll <= 0) return //Will not draw when there is no scroll.
+    if (length <= 0 || maxScroll <= 0) return //Will not draw when there is nothing to scroll.
 
     Canvas(modifier = modifier.size(DefaultCarouselWidth, DefaultCarouselHeight)) {
         val isLtr = layoutDirection == Ltr
@@ -246,7 +288,7 @@ object CarouselDefaults {
         thumbBrush: Brush,
         scrollingThumbBrush: Brush = thumbBrush,
         backgroundBrush: Brush,
-        scrollingBackgroundBrush: Brush = backgroundBrush
+        scrollingBackgroundBrush: Brush = backgroundBrush,
     ): CarouselColors = DefaultCarousalColors(
         thumbBrush = thumbBrush,
         scrollingThumbBrush = scrollingThumbBrush,
@@ -259,7 +301,7 @@ object CarouselDefaults {
         thumbColor: Color = MaterialTheme.colors.secondary,
         scrollingThumbColor: Color = thumbColor,
         backgroundColor: Color = contentColorFor(thumbColor).copy(alpha = BgAlpha),
-        scrollingBackgroundColor: Color = backgroundColor
+        scrollingBackgroundColor: Color = backgroundColor,
     ): CarouselColors = DefaultCarousalColors(
         thumbBrush = SolidColor(thumbColor),
         scrollingThumbBrush = SolidColor(scrollingThumbColor),
@@ -275,7 +317,7 @@ private class DefaultCarousalColors(
     private val thumbBrush: Brush,
     private val scrollingThumbBrush: Brush,
     private val backgroundBrush: Brush,
-    private val scrollingBackgroundBrush: Brush
+    private val scrollingBackgroundBrush: Brush,
 ) : CarouselColors {
 
     override fun thumbBrush(isScrollInProgress: Boolean): Brush =
